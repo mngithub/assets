@@ -1,0 +1,11 @@
+﻿<config>
+
+	<rtmp_url>rtmp://edge2.psitv.tv/liveedge/</rtmp_url>
+	<rtmp_streamid>mp4:292277314577_600</rtmp_streamid>
+	
+	<!-- 
+	<rtmp_url>rtmp://s2pchzxmtymn2k.cloudfront.net/cfx/st/</rtmp_url>
+	<rtmp_streamid>mp4:sintel.mp4</rtmp_streamid>
+	-->
+
+</config>

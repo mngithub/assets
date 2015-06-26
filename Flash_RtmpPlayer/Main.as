@@ -17,9 +17,9 @@ public class Main extends MovieClip
 	// --------------------------------------------------------------
 	// --------------------------------------------------------------
 	
-	public var RTMP_STREAM_ID:String 		= "mp4:292277314577_600";
-	public var RTMP_URL:String				= "rtmp://edge2.psitv.tv/liveedge/";
-	public var INTERVAL_HEARTBEAT:Number	= 10;
+	public static var RTMP_STREAM_ID:String 		= "mp4:292277314577_600";
+	public static var RTMP_URL:String				= "rtmp://edge2.psitv.tv/liveedge/";
+	public static var INTERVAL_HEARTBEAT:Number		= 6;
 	// --------------------------------------------------------------
 	// --------------------------------------------------------------
 	// --------------------------------------------------------------
@@ -39,7 +39,6 @@ public class Main extends MovieClip
 	function init():void
 	{
 
-			vid = new Video(); //typo! was "vid = new video();"
 			try{
 				stage.scaleMode = StageScaleMode.EXACT_FIT; 
 				stage.displayState = StageDisplayState.FULL_SCREEN;
@@ -48,44 +47,84 @@ public class Main extends MovieClip
 			}catch(err:Error){}	
 			stage.addEventListener(Event.RESIZE, _onStageResize, false, 0, true);		
 		
-	
-			
-			resizeVideo();
-		
-			nc = new NetConnection();
-			nc.addEventListener(NetStatusEvent.NET_STATUS, onConnectionStatus);
-			nc.addEventListener(AsyncErrorEvent.ASYNC_ERROR, asyncErrorHandler);
-			nc.client = { onBWDone: function():void{} };
-			nc.connect(RTMP_URL);   
-			
-			
-			heartbeat = new NetConnection();
-			heartbeat.addEventListener(NetStatusEvent.NET_STATUS, function(e:NetStatusEvent){
+			var loaderLocal:URLLoader = new URLLoader();
+			loaderLocal.addEventListener(Event.COMPLETE, function(e:Event) {
 				
-				trace('heartbeat', e.info.code);
-				if(isPingFailed){
-					trace("RELOAD !!!");
-					// reload
-					vid.clear();
-					nc.close();
-					nc.connect(RTMP_URL);
+				// อ่านค่า config.xml เรียบร้อยแล้ว
+				var localXML:XML = new XML(e.target.data);
+				
+				trace("--------------------------------");
+				trace("LOADED - config-local");
+				trace("--------------------------------");
+				trace("");
+				
+				var config:XML = localXML;
+				if(config.rtmp_streamid.length() < 1 
+				   	|| config.rtmp_url.length() < 1 
+				){
+					//failedOnLoadConfig("config-local");
+					return;
 				}
+				Main.RTMP_STREAM_ID 	= config.rtmp_streamid;
+				Main.RTMP_URL 			= config.rtmp_url;
 				
-				heartbeat.close();
-				if (e.info.code == "NetConnection.Connect.Closed") return;
-				if (e.info.code == "NetConnection.Connect.Success") return;
-				
-				isPingFailed = true;
+				startProgram();
+			});
+			loaderLocal.addEventListener(IOErrorEvent.IO_ERROR, function(e:Event) {
+										   
+				// อ่านค่า config.xml ไม่สำเร็จ (ปิดโปรแกรม)
+				var localXML:XML = new XML(e.target.data);
+				trace("--------------------------------");
+				trace("FAILED - config-local");
+				trace("--------------------------------");
+				trace("");
+				//failedOnLoadConfig("config-local");
 				
 				
 			});
-			setInterval(function(){ 
-				heartbeat.connect(RTMP_URL); 
-			}, INTERVAL_HEARTBEAT * 1000);
+			// load local config
+			loaderLocal.load(new URLRequest("./config.xml"));
+			
+	}
+	
+	private function startProgram():void{
+			
+		vid = new Video(); //typo! was "vid = new video();"
+		resizeVideo();
+		
+		nc = new NetConnection();
+		nc.addEventListener(NetStatusEvent.NET_STATUS, onConnectionStatus);
+		nc.addEventListener(AsyncErrorEvent.ASYNC_ERROR, asyncErrorHandler);
+		nc.client = { onBWDone: function():void{} };
+		nc.connect(RTMP_URL);   
+		
+		
+		heartbeat = new NetConnection();
+		heartbeat.addEventListener(NetStatusEvent.NET_STATUS, function(e:NetStatusEvent){
+			
+			trace('heartbeat', e.info.code);
+			if(isPingFailed){
+				trace("RELOAD !!!");
+				// reload
+				vid.clear();
+				nc.close();
+				nc.connect(RTMP_URL);
+			}
+			
+			heartbeat.close();
+			if (e.info.code == "NetConnection.Connect.Closed") return;
+			if (e.info.code == "NetConnection.Connect.Success") return;
+			
+			isPingFailed = true;
 			
 			
-			addChild(vid);
-			
+		});
+		setInterval(function(){ 
+			heartbeat.connect(RTMP_URL); 
+		}, INTERVAL_HEARTBEAT * 1000);
+		
+		
+		addChild(vid);
 	}
 
 	private function _onStageResize(event:Event):void
