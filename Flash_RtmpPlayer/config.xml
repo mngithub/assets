@@ -1,7 +1,14 @@
 ﻿<config>
-
+	
+	<buffer>10</buffer>
+	<heartbeat>30</heartbeat>
+	
+	<!-- 
 	<rtmp_url>rtmp://edge2.psitv.tv/liveedge/</rtmp_url>
 	<rtmp_streamid>mp4:292277314577_600</rtmp_streamid>
+	-->
+	<rtmp_url>rtmp://live3.netdesignhost.com/omdlive/</rtmp_url>
+	<rtmp_streamid>omdlive</rtmp_streamid>
 	
 	<!-- 
 	<rtmp_url>rtmp://s2pchzxmtymn2k.cloudfront.net/cfx/st/</rtmp_url>

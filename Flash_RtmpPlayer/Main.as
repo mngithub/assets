@@ -19,7 +19,8 @@ public class Main extends MovieClip
 	
 	public static var RTMP_STREAM_ID:String 		= "mp4:292277314577_600";
 	public static var RTMP_URL:String				= "rtmp://edge2.psitv.tv/liveedge/";
-	public static var INTERVAL_HEARTBEAT:Number		= 6;
+	public static var INTERVAL_HEARTBEAT:Number		= 30;
+	public static var BUFFER:Number					= 10;
 	// --------------------------------------------------------------
 	// --------------------------------------------------------------
 	// --------------------------------------------------------------
@@ -61,13 +62,16 @@ public class Main extends MovieClip
 				var config:XML = localXML;
 				if(config.rtmp_streamid.length() < 1 
 				   	|| config.rtmp_url.length() < 1 
+					|| config.buffer.length() < 1
+					|| config.heartbeat.length() < 1
 				){
 					//failedOnLoadConfig("config-local");
 					return;
 				}
 				Main.RTMP_STREAM_ID 	= config.rtmp_streamid;
 				Main.RTMP_URL 			= config.rtmp_url;
-				
+				Main.BUFFER 			= parse(config.buffer);
+				Main.INTERVAL_HEARTBEAT = parse(config.heartbeat);
 				startProgram();
 			});
 			loaderLocal.addEventListener(IOErrorEvent.IO_ERROR, function(e:Event) {
@@ -102,7 +106,7 @@ public class Main extends MovieClip
 		heartbeat = new NetConnection();
 		heartbeat.addEventListener(NetStatusEvent.NET_STATUS, function(e:NetStatusEvent){
 			
-			trace('heartbeat', e.info.code);
+			//trace('heartbeat', e.info.code);
 			if(isPingFailed){
 				trace("RELOAD !!!");
 				// reload
@@ -120,6 +124,7 @@ public class Main extends MovieClip
 			
 		});
 		setInterval(function(){ 
+			trace("HEARTBEAT");
 			heartbeat.connect(RTMP_URL); 
 		}, INTERVAL_HEARTBEAT * 1000);
 		
@@ -171,10 +176,12 @@ public class Main extends MovieClip
 			metaListener = new Object();
 			metaListener.onMetaData = received_Meta;
 			netStreamObj.client = metaListener;
-
+			netStreamObj.bufferTime = BUFFER;
+		
 			netStreamObj.play(RTMP_STREAM_ID);
 			vid.clear();
 			vid.attachNetStream(netStreamObj);
+			vid.smoothing = true;
 			
 			setTimeout(function(){ resizeVideo(); }, 1000);
 	}
@@ -219,6 +226,14 @@ public class Main extends MovieClip
 		vid.y = _aspectH;
 		vid.width = _videoW;
 		vid.height = _videoH;
+	}
+	
+	public static function parse(str:String):Number{
+		for(var i = 0; i < str.length; i++){
+			var c:String = str.charAt(i);
+			if(c != "0") break;
+		}
+		return Number(str.substr(i));
 	}
 
 } //end class
