@@ -21,6 +21,12 @@ public class Main extends MovieClip
 	public static var RTMP_URL:String				= "rtmp://edge2.psitv.tv/liveedge/";
 	public static var INTERVAL_HEARTBEAT:Number		= 30;
 	public static var BUFFER:Number					= 10;
+	
+	//public static var CONFIG_VWIDTH:Number			= 640;
+	//public static var CONFIG_VHEIGHT:Number			= 480;
+	private static var isStart:Boolean;
+	private static var cacheWidth:Number;
+	private static var cacheHeight:Number;
 	// --------------------------------------------------------------
 	// --------------------------------------------------------------
 	// --------------------------------------------------------------
@@ -35,18 +41,21 @@ public class Main extends MovieClip
 
     public var metaListener:Object;
 	
+	
+	
 	public function Main () { init(); }
 
 	function init():void
 	{
-
+		Main.isStart = false;
 			try{
-				stage.scaleMode = StageScaleMode.EXACT_FIT; 
-				stage.displayState = StageDisplayState.FULL_SCREEN;
+				stage.scaleMode = StageScaleMode.NO_SCALE; 
+				stage.displayState = StageDisplayState.NORMAL;
 				stage.align = StageAlign.TOP_LEFT;
 			
 			}catch(err:Error){}	
-			stage.addEventListener(Event.RESIZE, _onStageResize, false, 0, true);		
+			// ไม่ปรับขนาด 	
+			//stage.addEventListener(Event.RESIZE, _onStageResize, false, 0, true);		
 		
 			var loaderLocal:URLLoader = new URLLoader();
 			loaderLocal.addEventListener(Event.COMPLETE, function(e:Event) {
@@ -64,6 +73,8 @@ public class Main extends MovieClip
 				   	|| config.rtmp_url.length() < 1 
 					|| config.buffer.length() < 1
 					|| config.heartbeat.length() < 1
+					//|| config.vWidth.length() < 1
+					//|| config.vHeight.length() < 1
 				){
 					//failedOnLoadConfig("config-local");
 					return;
@@ -72,6 +83,9 @@ public class Main extends MovieClip
 				Main.RTMP_URL 			= config.rtmp_url;
 				Main.BUFFER 			= parse(config.buffer);
 				Main.INTERVAL_HEARTBEAT = parse(config.heartbeat);
+				
+				//Main.CONFIG_VWIDTH 		= parse(config.vWidth);
+				//Main.CONFIG_VHEIGHT 	= parse(config.vHeight);
 				startProgram();
 			});
 			loaderLocal.addEventListener(IOErrorEvent.IO_ERROR, function(e:Event) {
@@ -93,8 +107,11 @@ public class Main extends MovieClip
 	
 	private function startProgram():void{
 			
+		
 		vid = new Video(); //typo! was "vid = new video();"
 		resizeVideo();
+		
+		Main.isStart = true;
 		
 		nc = new NetConnection();
 		nc.addEventListener(NetStatusEvent.NET_STATUS, onConnectionStatus);
@@ -149,10 +166,19 @@ public class Main extends MovieClip
 	}
 
 	private function resizeVideo():void{
+		
+		// resize แค่ครั้งแรกครั้งเดียว
+		if(!Main.isStart){
+			Main.cacheWidth = stage.stageWidth;
+			Main.cacheHeight = stage.stageHeight;
+		}
+		if(vid == null) return;
 		vid.x = 0;
 		vid.y = 0;
-		vid.width = stage.stageWidth;
-		vid.height = stage.stageHeight;
+	
+		//trace("resizeVideo",stage.stageWidth,stage.stageHeight);
+		vid.width = Main.cacheWidth;
+		vid.height = Main.cacheHeight;
 	}
 
 	private function onConnectionStatus(e:NetStatusEvent):void
@@ -207,6 +233,7 @@ public class Main extends MovieClip
 
 	function received_Meta (data:Object):void
 	{
+		//trace("received_Meta");
 		var _stageW:int = stage.stageWidth;
 		var _stageH:int = stage.stageHeight;
 
